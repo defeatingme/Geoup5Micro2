@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Parameter Monitor</title>
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            background-color: #aaaaaa; /* Background color */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background-color: #eeeeee;
+            padding: 30px;
+            border-radius: 10px;
+			border: 5px solid #373a40;
+            width: 600px;
+        }
+        .sensor-data {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .meter-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .meter {
+            position: relative;
+            width: 120px;
+            height: 60px;
+            border-top-left-radius: 60px;
+            border-top-right-radius: 60px;
+            color: #ff6e6; /* Meter color */
+            border: 5px solid #686d76; /* Meter stroke color */
+            margin-bottom: 10px;
+        }
+        .needle {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(-45deg);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 60px solid #dc5f00;
+            transition: transform 0.5s ease;
+        }
+		.label { 
+			margin-top: 10px;
+			color: #373a40; /* Label color */
+			font-weight: bold; /* Bold font */
+		}
+		p {
+			color: #373a40; /* Value color */
+			font-weight: bold; /* Bold font */
+		}
+		h1 {
+			color: #373a40; /* Title color */
+        }
+    </style>
+    <!-- Include Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Parameter Monitor</h1>
+        <div class="sensor-data">
+            <div class="meter-container">
+                <div class="meter">
+                    <div class="needle" id="phNeedle"></div>
+                </div>
+                <div class="label">
+                    <p>pH</p>
+                    <p id="pH">Loading...</p>
+                </div>
+            </div>
+            <div class="meter-container">
+                <div class="meter">
+                    <div class="needle" id="humidityNeedle"></div>
+                </div>
+                <div class="label">
+                    <p>Humidity</p>
+                    <p id="Humidity">Loading...</p>
+                </div>
+            </div>
+            <div class="meter-container">
+                <div class="meter">
+                    <div class="needle" id="temperatureNeedle"></div>
+                </div>
+                <div class="label">
+                    <p>Temperature</p>
+                    <p id="Temperature">Loading...</p>
+                </div>
+            </div>
+            <div class="meter-container">
+                <div class="meter">
+                    <div class="needle" id="dissolvedOxygenNeedle"></div>
+                </div>
+                <div class="label">
+                    <p>Dissolved Oxygen</p>
+                    <p id="DissolvedOxygen">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+ 		  apiKey: "AIzaSyCZMTuGPmbrHhTKAMvUyZgzevXhiZz-zLI",
+		  authDomain: "group5micro.firebaseapp.com",
+		  databaseURL: "https://group5micro-default-rtdb.asia-southeast1.firebasedatabase.app",
+		  projectId: "group5micro",
+		  storageBucket: "group5micro.appspot.com",
+		  messagingSenderId: "463632801188",
+		  appId: "1:463632801188:web:4bc86916a219693a757531",
+		  measurementId: "G-GLC427KFTN"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Reference to your entire Firebase Database
+        var database = firebase.database();
+
+        // Reference to the specific part of the Firebase Database you want to listen to
+        var sensorDataRef = database.ref('/sensors');
+
+        // Function to update the HTML content with the data from Firebase and adjust needle rotation
+        function updateData(data) {
+            document.getElementById('pH').innerText = data.pH || 'N/A';
+            document.getElementById('Humidity').innerText = data.Humidity || 'N/A';
+            document.getElementById('Temperature').innerText = data.Temperature || 'N/A';
+            document.getElementById('DissolvedOxygen').innerText = data.DissolvedOxygen || 'N/A';
+            
+            setNeedleRotation('phNeedle', data.pH, 0, 14); // pH ranges from 0 to 14
+            setNeedleRotation('humidityNeedle', data.Humidity, 0, 100); // Humidity ranges from 0 to 100
+            setNeedleRotation('temperatureNeedle', data.Temperature, -40, 125); // Temperature ranges from -40 to 125
+            setNeedleRotation('dissolvedOxygenNeedle', data.DissolvedOxygen, 0, 20); // Dissolved Oxygen ranges
+        }
+
+        // Set up a listener for changes to the sensor data in Firebase
+        sensorDataRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            updateData(data);
+        });
+
+        // Function to set needle rotation based on sensor value
+        function setNeedleRotation(needleId, value, min, max) {
+            var needle = document.getElementById(needleId);
+            var range = max - min;
+            var normalizedValue = (value - min) / range; // Normalize the value between 0 and 1
+            var rotation = (normalizedValue * 180) - 90; // Convert to degrees and adjust for initial position
+            needle.style.transform = 'translateX(-50%) rotate(' + rotation + 'deg)';
+        }
+    </script>
+</body>
+</html>
